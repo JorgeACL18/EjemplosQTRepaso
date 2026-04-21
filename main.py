@@ -18,10 +18,11 @@ class MainWindow(QMainWindow):
         self.txtNombre = QLineEdit()
         self.txtNombre.setPlaceholderText("Nombre")
         self.cajaV.addWidget(self.txtNombre)
+        self.txtNombre.returnPressed.connect(self.retpress_saludar)
 
         self.btnSaludar = QPushButton("Saludo")
         self.cajaV.addWidget(self.btnSaludar)
-        self.btnSaludar.clicked.connect(self.btn_saludar)
+        self.btnSaludar.clicked.connect(self.clicked_saludar)
 
         self.setCentralWidget(self.container)
 
@@ -32,6 +33,12 @@ class MainWindow(QMainWindow):
         nombre = self.txtNombre.text()
         if nombre != "":
             self.lblSaludo.setText("Borra cuenta " + nombre)
+
+    def retpress_saludar(self):
+        self.btn_saludar()
+
+    def clicked_saludar(self):
+        self.btn_saludar()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
