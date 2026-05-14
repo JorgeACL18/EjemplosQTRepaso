@@ -1,5 +1,6 @@
 import sys
 from PyQt6.QtCore import Qt, QAbstractTableModel
+from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QLabel, QPushButton, QLineEdit, QWidget, \
     QGridLayout, QHBoxLayout, QComboBox, QTableView, QCheckBox
 
@@ -21,6 +22,23 @@ class ModeloTabla(QAbstractTableModel):
             if role == Qt.ItemDataRole.DisplayRole:
                 return self.tabla[index.row()][index.column()]
 
+    def data(self, index, role):
+        if not index.isValid():
+            return None
+
+        fila = index.row()
+        col = index.column()
+        valor = self.tabla[fila][col]
+
+        # 1. El texto que se verá (incluido el de la columna 3)
+        if role == Qt.ItemDataRole.DisplayRole:
+            return valor
+
+        # 2. La imagen que se añade como "decoración"
+        if role == Qt.ItemDataRole.DecorationRole:
+            if col == 3:
+                # Si el valor es "True", ponemos el tic; si no, la equis
+                return QIcon("tic.png") if valor == "True" else QIcon("equis.png")
 
 # --- VISTA Y LÓGICA ---
 class MainWindow(QMainWindow):
@@ -111,12 +129,15 @@ class MainWindow(QMainWindow):
         # Si activamos edición, Modificar se apaga. Si desactivamos, depende de si hay algo tocado.
         self.bot2.setEnabled(False if active else self.fila_apuntada is not None)
 
+        self.dniEnt.setEnabled(not active)
+
     def clean_fields(self):
         self.nomEnt.clear()
         self.dniEnt.clear()
         self.generoEnt.setCurrentIndex(0)
         self.fallecidoEnt.setChecked(False)
-        self.bot1.setEnabled(False)  # Al limpiar, se vuelve a apagar
+        self.bot1.setEnabled(False)
+        self.dniEnt.setEnabled(True)# Al limpiar, se vuelve a apagar
 
     def on_table_click(self, index):
         self.fila_apuntada = index.row()
@@ -132,12 +153,30 @@ class MainWindow(QMainWindow):
         self.clean_fields()
 
     def start_edit(self):
+        # Primero chequeamos si de verdad hay una fila seleccionada, no sea que estemos editando el aire
         if self.fila_apuntada is not None:
+            # Sacamos los datos de la lista usando el índice de la fila que marcaste
             f = self.datos[self.fila_apuntada]
+
+            # Ponemos el nombre en su sitio
             self.nomEnt.setText(f[0])
+
+            # Aquí ponemos el DNI en su cuadro
             self.dniEnt.setText(f[1])
+
+            # ¡OJO AQUÍ! Esta es la línea mágica para que no te toquen el DNI
+            # Ponemos el campo en modo 'Solo lectura' para que lo vean pero no lo jodan
+            self.dniEnt.setReadOnly(True)
+
+            # También podrías usar setEnabled(False), pero se pone gris y a veces es un fastidio leerlo
+
+            # Ajustamos el género en el combo box
             self.generoEnt.setCurrentIndex(self.generoEnt.findText(f[2]))
+
+            # Marcamos si el bicho está fallecido o no
             self.fallecidoEnt.setChecked(f[3] == "True")
+
+            # Activamos el modo edición (seguro aquí habilitas/deshabilitas botones)
             self.edit_mode(True)
 
     def save_edit(self):
@@ -153,6 +192,7 @@ class MainWindow(QMainWindow):
     def cancel_action(self):
         self.clean_fields()
         self.edit_mode(False)
+
 
 
 if __name__ == '__main__':
