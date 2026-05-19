@@ -3,6 +3,12 @@ from PyQt6.QtCore import Qt, QAbstractTableModel
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QLabel, QPushButton, QLineEdit, QWidget, \
     QGridLayout, QHBoxLayout, QComboBox, QTableView, QCheckBox
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, Image, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.colors import Color
+from reportlab.lib.pagesizes import letter, A4
+from reportlab.rl_settings import showBoundary
 
 
 # --- MODELO ---
@@ -67,6 +73,7 @@ class MainWindow(QMainWindow):
         self.bot2 = QPushButton("Modificar")
         self.bot3 = QPushButton("Aceptar")
         self.bot4 = QPushButton("Cancelar")
+        self.bot5 = QPushButton("Guardar PDF")
 
         # Layout
         self.grid.addWidget(QLabel("Nombre:"), 0, 0)
@@ -83,6 +90,7 @@ class MainWindow(QMainWindow):
         hBox.addWidget(self.bot2)
         hBox.addWidget(self.bot3)
         hBox.addWidget(self.bot4)
+        hBox.addWidget(self.bot5)
 
         self.tView = QTableView()
         self.modelo = ModeloTabla(self.datos)
@@ -106,6 +114,7 @@ class MainWindow(QMainWindow):
         self.bot2.clicked.connect(self.start_edit)
         self.bot3.clicked.connect(self.save_edit)
         self.bot4.clicked.connect(self.cancel_action)
+        self.bot5.clicked.connect(self.pdf)
         self.tView.clicked.connect(self.on_table_click)
 
         # Estado inicial
@@ -192,6 +201,38 @@ class MainWindow(QMainWindow):
     def cancel_action(self):
         self.clean_fields()
         self.edit_mode(False)
+
+    def pdf(self):
+        self.crearPDF()
+        print("Informe generado")
+
+    def crearPDF (self):
+        guion = []
+
+        hojaEstilo = getSampleStyleSheet()
+        cabecera = hojaEstilo["Heading4"]
+        cabecera.pageBreakBefore = 0
+        cabecera.keepWithNext = 0
+        cabecera.backColor = colors.blanchedalmond
+
+        parrafo = Paragraph("Listado de usuarios", cabecera)
+
+        guion.append(parrafo)
+
+        textoNormal = hojaEstilo["BodyText"]
+        parrafo2 = Paragraph("A continuación se listan los usuarios recogidos en la aplicación", textoNormal)
+        guion.append(parrafo2)
+        guion.append(Spacer (0,20))
+
+        tabla = Table(self.modelo.tabla)
+        columnas = len(self.modelo.tabla[0])
+        estilo = [("TEXTCOLOR", (0,0), (columnas-1,0), colors.grey),
+                  ("TEXTCOLOR", (0,0), (columnas-1,-1), colors.lightgrey)]
+        tabla.setStyle(estilo)
+        guion.append(tabla)
+
+        documento = SimpleDocTemplate("tablaUsuario.pdf", pagesize = A4, showBoundary = 1)
+        documento.build(guion)
 
 
 
