@@ -42,7 +42,7 @@ class ModeloTabla(QAbstractTableModel):
 
         # 2. La imagen que se añade como "decoración"
         if role == Qt.ItemDataRole.DecorationRole:
-            if col == 3:
+            if col == 3 and fila >= 1:
                 # Si el valor es "True", ponemos el tic; si no, la equis
                 return QIcon("tic.png") if valor == "True" else QIcon("equis.png")
 
@@ -54,7 +54,8 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(434, 434)
 
         # Datos iniciales
-        self.datos = [['Ana', '1234R', 'Femenino', 'True'],
+        self.datos = [['Nombre', 'DNI', 'Genero', 'Fallecido'],
+                    ['Ana', '1234R', 'Femenino', 'True'],
                       ['Pedro', '5678P', 'Masculino', 'False'],
                       ['Luis', '91011L', 'Masculino', 'False']]
 
@@ -224,10 +225,39 @@ class MainWindow(QMainWindow):
         guion.append(parrafo2)
         guion.append(Spacer (0,20))
 
-        tabla = Table(self.modelo.tabla)
+        tic = Image("tic.png", width=16, height=16)
+        ex = Image("equis.png", width=16, height=16)
+
+        datos = []
+        datos.append(self.modelo.tabla[0])
+        for i in range(1, len(self.modelo.tabla)):
+            if self.modelo.tabla[i][3] == "True":
+                datos.append(self.modelo.tabla[i])
+                datos[i][3] = tic
+            else :
+                datos.append(self.modelo.tabla[i])
+                datos[i][3] = ex
+
+        tabla = Table(datos)
+
         columnas = len(self.modelo.tabla[0])
-        estilo = [("TEXTCOLOR", (0,0), (columnas-1,0), colors.grey),
-                  ("TEXTCOLOR", (0,0), (columnas-1,-1), colors.lightgrey)]
+        estilo = [("TEXTCOLOR", (0,0), (columnas-1,0), colors.darkslategrey),
+                  ("TEXTCOLOR", (0,1), (columnas-1,-1), colors.dimgrey),
+                  ("BOX", (0,1), (-1,-1), 0.25, colors.grey),
+                  ("INNERGRID", (0,1), (-1,-1), 0.15, colors.lightgrey),
+                  ("ALIGN", (3,1), (3,-1), 'CENTER')]
+        for i in range(1, len(self.modelo.tabla)):
+            if self.modelo.tabla[i][2] == "Masculino":
+                estilo.append(('BACKGROUND', (2,i), (2,i), colors.lightcyan))
+            elif self.modelo.tabla[i][2] == "Femenino":
+                estilo.append(('BACKGROUND', (2,i), (2,i), colors.lightpink))
+            elif self.modelo.tabla[i][2] == "Indefinido":
+                estilo.append(('BACKGROUND', (2,i), (2,i), colors.palegreen))
+            elif self.modelo.tabla[i][2] == "Otro":
+                estilo.append(('BACKGROUND', (2,i), (2,i), colors.lightgoldenrodyellow))
+
+
+
         tabla.setStyle(estilo)
         guion.append(tabla)
 
