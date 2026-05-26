@@ -3,6 +3,8 @@ from PyQt6.QtCore import Qt, QAbstractTableModel
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QLabel, QPushButton, QLineEdit, QWidget, \
     QGridLayout, QHBoxLayout, QComboBox, QTableView, QCheckBox
+from reportlab.graphics.charts.barcharts import VerticalBarChart
+from reportlab.graphics.shapes import Drawing
 from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, Image, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
@@ -54,10 +56,10 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(434, 434)
 
         # Datos iniciales
-        self.datos = [['Nombre', 'DNI', 'Genero', 'Fallecido'],
-                    ['Ana', '1234R', 'Femenino', 'True'],
-                      ['Pedro', '5678P', 'Masculino', 'False'],
-                      ['Luis', '91011L', 'Masculino', 'False']]
+        self.datos = [['Nombre', 'DNI', 'Genero', 'Fallecido', 'Edad'],
+                    ['Ana', '1234R', 'Femenino', 'True', 90],
+                      ['Pedro', '5678P', 'Masculino', 'False', 50],
+                      ['Luis', '91011L', 'Masculino', 'False', 20]]
 
         self.fila_apuntada = None
 
@@ -245,7 +247,8 @@ class MainWindow(QMainWindow):
                   ("TEXTCOLOR", (0,1), (columnas-1,-1), colors.dimgrey),
                   ("BOX", (0,1), (-1,-1), 0.25, colors.grey),
                   ("INNERGRID", (0,1), (-1,-1), 0.15, colors.lightgrey),
-                  ("ALIGN", (3,1), (3,-1), 'CENTER')]
+                  ("ALIGN", (3,1), (3,-1), 'CENTER'),
+                  ("ALIGN", (0,0), (-1,0), 'CENTER')]
         for i in range(1, len(self.modelo.tabla)):
             if self.modelo.tabla[i][2] == "Masculino":
                 estilo.append(('BACKGROUND', (2,i), (2,i), colors.lightcyan))
@@ -256,10 +259,36 @@ class MainWindow(QMainWindow):
             elif self.modelo.tabla[i][2] == "Otro":
                 estilo.append(('BACKGROUND', (2,i), (2,i), colors.lightgoldenrodyellow))
 
-
-
         tabla.setStyle(estilo)
         guion.append(tabla)
+
+        tituloGrafica = Paragraph("Gráfica de edades", cabecera)
+        guion.append(tituloGrafica)
+
+        dib = Drawing(400,200)
+        grafica = VerticalBarChart()
+        grafica.x = 50
+        grafica.y = 50
+        grafica.width = 300
+        grafica.height = 125
+        grafica.data = [[self.datos[i][4] for i in range(1, len(self.datos))]]
+        grafica.strokeColor = colors.grey
+        grafica.barSpacing = 2
+        grafica.valueAxis.valueMin = 0
+        grafica.valueAxis.valueMax = 100
+        grafica.valueAxis.valueStep = 20
+
+        grafica.categoryAxis.labels.boxAnchor = 'ne'
+        grafica.categoryAxis.labels.dx = 8
+        grafica.categoryAxis.labels.dy = -2
+        grafica.categoryAxis.labels.angle = 30
+        grafica.categoryAxis.categoryNames = [self.datos[i][0] for i in range(1, len(self.datos))]
+
+
+        dib.add(grafica)
+
+
+        guion.append(dib)
 
         documento = SimpleDocTemplate("tablaUsuario.pdf", pagesize = A4, showBoundary = 1)
         documento.build(guion)
